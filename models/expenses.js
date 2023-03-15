@@ -2,31 +2,25 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
-const userSchema = new Schema({
-  name:{
+const expenseSchema = new Schema({
+  amount:{
     type: String,
     required: true
   },
-  email:{
+  description:{
     type: String,
     required: true
   },
-  password:{
+  category:{
     type: String,
     required: true
   },
-  isPremiumUser:{
-    type: Boolean,
-    required: true
-  },
-  totalExpenses:{
-    type:Number,
+  userId:{
+    type: Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   }
 });
 
-module.exports = mongoose.model('User',userSchema);
-
-
-
+module.exports = mongoose.model('Expense',expenseSchema);
 

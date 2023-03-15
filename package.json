@@ -1,5 +1,5 @@
 {
-  "name": "nodejs-complete-guide",
+  "name": "node-js",
   "version": "1.0.0",
   "description": "Complete Node.js Guide",
   "main": "app.js",
@@ -8,20 +8,29 @@
     "start": "nodemon app.js",
     "start-server": "node app.js"
   },
-  "author": "Maximilian Schwarzmüller",
+  "author": "Nishi Biswasroy",
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^1.18.3"
+    "nodemon": "^2.0.20"
   },
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "ejs": "^2.6.1",
-    "express": "^4.16.3",
-    "express-handlebars": "^3.0.0",
-    "mongodb": "^3.1.6",
-    "mongoose": "^5.13.16",
-    "mysql2": "^1.6.1",
-    "pug": "^2.0.3",
-    "sequelize": "^5.0.0-beta.11"
-  }
+    "aws-sdk": "^2.1310.0",
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.1",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "crypt": "0.0.2",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "helmet": "^6.0.1",
+    "jsonwebtoken": "^9.0.0",
+    "mongodb": "^5.1.0",
+    "mongoose": "^7.0.1",
+    "morgan": "^1.10.0",
+    "mysql2": "^3.1.0",
+    "razorpay": "^2.8.4",
+    "sequelize": "^6.28.0",
+    "sib-api-v3-sdk": "^8.5.0"
+  },
+  "keywords": []
 }

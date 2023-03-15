@@ -1,56 +1,39 @@
-const path = require('path');
-
 const express = require('express');
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-
-const errorController = require('./controllers/error');
-const User = require('./models/user');
-
 const app = express();
+const mongoose=require('mongoose');
+const dotenv=require('dotenv');
+dotenv.config();
 
-app.set('view engine', 'ejs');
-app.set('views', 'views');
+const bodyParser = require('body-parser');
 
-const adminRoutes = require('./routes/admin');
-const shopRoutes = require('./routes/shop');
+const cors = require('cors');
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
+const userRoute = require('./routes/login');
+const expenseRoute = require('./routes/expense');
+const orderRoute=require('./routes/purchase');
+const premiumRoute=require('./routes/premium');
 
-app.use((req, res, next) => {
-  User.findById('5bab316ce0a7c75f783cb8a8')
-    .then(user => {
-      req.user = user;
-      next();
-    })
-    .catch(err => console.log(err));
+app.use(cors());
+
+app.use(bodyParser.json());
+
+app.use('/',userRoute);
+app.use('/',expenseRoute);
+app.use('/',orderRoute);
+app.use('/',premiumRoute);
+
+app.use((req,res) => {
+  console.log('urll',req.url);
+  console.log("added extra logs");
+  //next();
+  //console.log(path.join(__dirname,`public/${req.url}`));
+   // res.sendFile(path.join(__dirname,`public/${req.url}`));
 });
 
-app.use('/admin', adminRoutes);
-app.use(shopRoutes);
-
-app.use(errorController.get404);
-
-mongoose
-  .connect(
-    'mongodb+srv://nishibiswasroy:littlebiswasroy@cluster0.ro9x5ox.mongodb.net/?retryWrites=true&w=majority'
-  )
-  .then(result => {
-    User.findOne().then(user => {
-      if (!user) {
-        const user = new User({
-          name: 'Nishi',
-          email: 'nishibiswasroy@gmail.com',
-          cart: {
-            items: []
-          }
-        });
-        user.save();
-      }
-    });
-    app.listen(3000);
-  })
-  .catch(err => {
-    console.log(err);
-  });
+mongoose.connect('mongodb+srv://nishibiswasroy:littlebiswasroy@cluster0.u0oquqd.mongodb.net/expense?retryWrites=true&w=majority').then(result =>{
+  console.log('Connected');
+app.listen(4000);
+})
+.catch(error => {
+  console.log(error);
+});

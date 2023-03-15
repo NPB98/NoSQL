@@ -1,101 +1,80 @@
-const Product = require('../models/product');
-
-exports.getAddProduct = (req, res, next) => {
-  res.render('admin/edit-product', {
-    pageTitle: 'Add Product',
-    path: '/admin/add-product',
-    editing: false
-  });
-};
-
-exports.postAddProduct = (req, res, next) => {
-  const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
-  const price = req.body.price;
-  const description = req.body.description;
-  const product = new Product({
-    title: title,
-    price: price,
-    description: description,
-    imageUrl: imageUrl,
-    userId: req.user
-  });
-  product
-    .save()
-    .then(result => {
-      // console.log(result);
-      console.log('Created Product');
-      res.redirect('/admin/products');
-    })
-    .catch(err => {
-      console.log(err);
-    });
-};
-
-exports.getEditProduct = (req, res, next) => {
-  const editMode = req.query.edit;
-  if (!editMode) {
-    return res.redirect('/');
+const Expense=require('../models/expenses');
+const User=require('../models/user');
+const UserServices=require('../services/userServices');
+const mongoDb = require('mongodb');
+const ObjectId = mongoDb.ObjectId;
+const getExpenses=async(req,res,next)=>{
+    try{
+     //console.log('Request',req.user._id);
+      const page = req.query.page || 1;
+      const rows=req.query.rows;
+      const expensesPerPage = rows;
+      const countData = await Expense.count();
+      //console.log(countData);
+    const expenses = await Expense.find({userId:req.user._id})
+    .skip((page-1) * expensesPerPage).limit(Number(expensesPerPage)).exec();
+    //console.log(expenses);
+      res.status(201).json({
+         expenses:expenses,
+         currentPage: Number(page),
+         hasNextPage:  expensesPerPage*page < countData,
+         nextPage:Number(page)+1,
+         hasPreviousPage:Number(page)>1,
+         previousPage:Number(page)-1,
+         lastPage:Math.ceil(countData/expensesPerPage)
+      }); 
+   }
+  catch(err){
+      res.status(404).json(err);
   }
-  const prodId = req.params.productId;
-  Product.findById(prodId)
-    .then(product => {
-      if (!product) {
-        return res.redirect('/');
-      }
-      res.render('admin/edit-product', {
-        pageTitle: 'Edit Product',
-        path: '/admin/edit-product',
-        editing: editMode,
-        product: product
-      });
-    })
-    .catch(err => console.log(err));
-};
+ };
+ const deleteExpense = async(req,res,next)=>{
+   //console.log(req);console.log(id);
+    try{
+      const id = req.params.expenseId;
+      //console.log(new ObjectId(id));
+      const result=await Expense.findOneAndDelete({_id:id, userId: req.user._id});
+      console.log(result);
+      const usedData =  await User.findById(req.user._id);
+      const userAmount = Number(usedData.totalExpenses)-Number(result.amount);
+      await usedData.updateOne({totalExpenses: userAmount});   
+      res.status(202).json({success:true,message:"Successfully Deleted"});
+    }
+    catch(err){
+        console.log(err);
+        res.status(404).json(`${err}`);
+    }
+  };
+ const addExpense =async (req,res,next)=>{
+    const amount = req.body.amount;
+    const description = req.body.description;
+    const category = req.body.category;
+    console.log('USERID',req.user.id);
+    try{
+      const expense= new Expense({
+        amount:amount,
+        description:description,
+        category:category,
+        userId:req.user._id
+      })
+    console.log(expense);
+    const answer=await expense.save();
+    const usedData=await User.findById(req.user._id);
+    const totalExpense=Number(usedData.totalExpenses)+Number(amount);
+    console.log(totalExpense);
+    await usedData.updateOne({totalExpenses: totalExpense});
+    res.status(201).json(answer);
+    }
+  catch(err) {
+    return res.status(500).json({success:false,error:err})
+ }
+}
+ module.exports={
+  getExpenses,
+  addExpense,
+  deleteExpense,
+ }
 
-exports.postEditProduct = (req, res, next) => {
-  const prodId = req.body.productId;
-  const updatedTitle = req.body.title;
-  const updatedPrice = req.body.price;
-  const updatedImageUrl = req.body.imageUrl;
-  const updatedDesc = req.body.description;
+ 
 
-  Product.findById(prodId)
-    .then(product => {
-      product.title = updatedTitle;
-      product.price = updatedPrice;
-      product.description = updatedDesc;
-      product.imageUrl = updatedImageUrl;
-      return product.save();
-    })
-    .then(result => {
-      console.log('UPDATED PRODUCT!');
-      res.redirect('/admin/products');
-    })
-    .catch(err => console.log(err));
-};
 
-exports.getProducts = (req, res, next) => {
-  Product.find()
-    // .select('title price -_id')
-    // .populate('userId', 'name')
-    .then(products => {
-      console.log(products);
-      res.render('admin/products', {
-        prods: products,
-        pageTitle: 'Admin Products',
-        path: '/admin/products'
-      });
-    })
-    .catch(err => console.log(err));
-};
-
-exports.postDeleteProduct = (req, res, next) => {
-  const prodId = req.body.productId;
-  Product.findByIdAndRemove(prodId)
-    .then(() => {
-      console.log('DESTROYED PRODUCT');
-      res.redirect('/admin/products');
-    })
-    .catch(err => console.log(err));
-};
