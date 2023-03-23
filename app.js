@@ -25,9 +25,6 @@ app.use('/',premiumRoute);
 app.use((req,res) => {
   console.log('urll',req.url);
   console.log("added extra logs");
-  //next();
-  //console.log(path.join(__dirname,`public/${req.url}`));
-   // res.sendFile(path.join(__dirname,`public/${req.url}`));
 });
 
 mongoose.connect('mongodb+srv://nishibiswasroy:littlebiswasroy@cluster0.u0oquqd.mongodb.net/expense?retryWrites=true&w=majority').then(result =>{

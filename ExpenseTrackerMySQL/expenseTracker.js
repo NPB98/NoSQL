@@ -1,3 +1,4 @@
+//const jwt= require("jsonwebtoken");
 
 var amt=document.getElementById('amount');
 var desc=document.getElementById('description');
@@ -14,7 +15,6 @@ function addExpense(e){
         category:cate.value
     }
     const token=localStorage.getItem('token');
-    console.log(token);
     axios.post("http://localhost:4000/addExpenses",obj,{headers:{'Authorization':token}})
     .then((response)=>{
         showExpensesOnScreen(obj);
@@ -24,11 +24,11 @@ function addExpense(e){
 function showPremiumUser(){
     document.getElementById('rzp-button1').style.visibility='hidden';
     document.getElementById('premium').innerHTML = 'You are premium user' ;
-    //const downloadFacility=document.getElementById("downloadFacility");
-//     const childNode=`<div class="container">
-//     <button onclick="download()" id="downloadOption">Download File</button>
-//   </div>`
-//   downloadFacility.innerHTML+=childNode;
+    const downloadFacility=document.getElementById("downloadFacility");
+    const childNode=`<div class="container">
+    <button onclick="download()" id="downloadOption">Download File</button>
+  </div>`
+  downloadFacility.innerHTML+=childNode;
 }
 
 function parseJwt (token) {
@@ -43,32 +43,35 @@ function Helper(e){
     e.preventDefault();
       const rows = document.getElementById('row');
       localStorage.setItem('rows',rows.value);
-     console.log(rows.value);
       getExpense(1);
   }
 
 window.addEventListener("DOMContentLoaded",(e)=>{
     const token=localStorage.getItem('token');
     const decodedToken=parseJwt(token);
-    console.log(decodedToken);
     const isPremiumUser=decodedToken.isPremiumUser;
     if(isPremiumUser){
         showPremiumUser();
         showLeaderboard();
     }
+   console.log('downloads');
+   axios.get("http://localhost:4000/getDownloads", { headers: {"Authorization": token}})
+     .then((downloads)=>{
+    const listItem = document.getElementById("getDownloads");
+    for(let i=0; i<downloads.data.length; i++){
+      listItem.innerHTML += `<li>${downloads.data[i].download}</li>`
+    }
+}).catch((err)=>{
+    console.log(err);
+})
 })
 async function getExpense(page){
     const token = localStorage.getItem('token');
     const rows = localStorage.getItem('rows');
-    //console.log(rows);
    const Expenses =  await axios.get(`http://localhost:4000/getExpenses?page=${page}&rows=${rows}`,{ headers: {"Authorization": token}});
-   console.log("EXPENSES",Expenses);
+   console.log(Expenses);
    const expenses= Expenses.data.expenses;
    console.log(expenses.length);
-   const parentNode= document.getElementById('items');
-   // console.log(item);
-    parentNode.innerHTML="";
-
    for(let i=0; i<expenses.length; i++){
         showExpensesOnScreen(expenses[i]);
      }
@@ -77,17 +80,14 @@ async function getExpense(page){
  }
 
 function showPagination(response){
-    console.log('Response',response);
     const currentPage = response.currentPage;
     const hasNextPage = response.hasNextPage;
     const nextPage = response.nextPage;
     const hasPreviousPage = response.hasPreviousPage;
     const previousPage = response.previousPage;
     const lastPage = response.lastPage;
-    const pagination = document.getElementById("pagination1");
-    pagination.innerHTML = "";
-    //console.log('PAGINATION',pagination.innerHTML);
-    
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = " ";
   if(hasPreviousPage){
     const btn2 = document.createElement('button');
     btn2.innerHTML = previousPage;
@@ -100,38 +100,50 @@ function showPagination(response){
   pagination.appendChild(btn1);
   if(hasNextPage){
     const btn3 = document.createElement('button');
-    console.log(btn3.innerHTML);
     btn3.innerHTML = nextPage;
     btn3.addEventListener('click', ()=> getExpense(nextPage));
-    //pagination.innerHTML="";
     pagination.appendChild(btn3);
   }
  }
   
 function showExpensesOnScreen(item){
     const parentNode= document.getElementById('items');
-    console.log(item);
-    //parentNode.innerHTML="";
-    const childHTML = `<li id=${item._id}> Expense Amount: ${item.amount}, Category: ${item.category}, Description: ${item.description}
-                        <button onclick=deleteExpense('${item._id}')>Delete</button>
+    const childHTML = `<li id=${item.id}> Expense Amount: ${item.amount}, Category: ${item.category}, Description: ${item.description}
+                        <button onclick=deleteExpense('${item.id}')>Delete</button>
                         </li>`;
     parentNode.innerHTML = parentNode.innerHTML+childHTML;
 }
 
 function deleteExpense(expenseId){
-    //console.log(expenseId);
     const token=localStorage.getItem('token');
     axios.get(`http://localhost:4000/deleteExpense/${expenseId}`,{headers:{'Authorization':token}})
     .then((response)=>{
         const parentNode = document.getElementById('items');
         const childNodeToBeDeleted = document.getElementById(expenseId);
-        //console.log(parentNode);
         if(childNodeToBeDeleted){
             parentNode.removeChild(childNodeToBeDeleted)
         }
-        //showExpensesOnScreen()
-    }).catch((err)=>console.log(err));
+    })
+    .catch((err)=>console.log(err));
 }
+
+function download(){
+    const token = localStorage.getItem('token');
+    axios.get("http://localhost:4000/download",{ headers: {"Authorization": token}})
+    .then((response)=>{
+      if(response.status === 200){
+        let a = document.createElement('a');
+        a.href = response.data.fileUrl;
+        a.download = 'myexpense.csv';
+        a.click();
+      }else{
+         throw new Error(response.data.message);
+      }
+    })
+    .catch((err)=>{
+        document.body.innerHTML += `<div class="container"style="color:red;"> ${err}</div>`
+    })
+ }
 
 function showLeaderboard(){
     const inputElement = document.createElement('input');
@@ -141,13 +153,9 @@ function showLeaderboard(){
         const token = localStorage.getItem('token');
        const leaderboardArray = await axios.get("http://localhost:4000/showLeaderboard", { headers: {"Authorization": token}});
         let leaderboardElem = document.getElementById('leaderboard');
-        leaderboardElem.innerHTML='';
-        leaderboardElem.innerHTML += '<h3> LeaderBoard </h3>'
-        let leaderboardElem1 = document.getElementById('leaderboarddetails');
+        leaderboardElem.innerHTML += '<div class="container"><h3> LeaderBoard </h1></div>'
         leaderboardArray.data.forEach((userDetails) => {
-            console.log(userDetails);
-            var child=`<li>Name-${userDetails.name} Total Expense-${userDetails.totalExpenses}`
-            leaderboardElem1.innerHTML += child;           
+            leaderboardElem.innerHTML += `<div class='container'><li>Name - ${userDetails.name} Total Expense-${userDetails.totalExpenses}</div>`
         })
     }
     document.getElementById('premium').appendChild(inputElement)
@@ -184,9 +192,5 @@ document.getElementById('rzp-button1').onclick=async function(e){
         console.log(answer);
         alert('Something went wrong');
     });
-}
-
-function logout(){
-    window.location.href="file:///E:/Little/Expense%20Tracker%20NoSQL/login.html"
 }
 
